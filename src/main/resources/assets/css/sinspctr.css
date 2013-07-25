@@ -1,98 +1,63 @@
-.chart div {
-   font: 10px sans-serif;
-   background-color: steelblue;
-   text-align: right;
-   padding: 3px;
-   margin: 1px;
-   color: white;
-}
-
 body {
-  overflow: hidden;
-  margin: 0;
-  font: 14px "Helvetica Neue";
-}
-
-svg {
-  width: 1280px;
-  height: 800px;
-}
-
-#graph, #header {
-  position: absolute;
-  top: 0;
+	margin: 0;
+	font: 14px "Helvetica Neue";
 }
 
 #header {
-  z-index: 1;
-  display: block;
-}
-
-#header {
-  top: 80px;
-  left: 140px;
-  font: 300 36px "Helvetica Neue";
-}
-
-#graph {
-  border: 1px;	
+	z-index: 1;
+	font: 300 36px "Helvetica Neue";
+	position: absolute;
+	top: 50px;
+	left: 50px;
 }
 
 rect {
-  fill: none;
-  pointer-events: all;
+	fill: none;
+	pointer-events: all;
 }
 
 pre {
-  font-size: 18px;
+	font-size: 18px;
 }
 
-line {
-  stroke: #000;
-  stroke-width: 1.5px;
-}
-
-.string, .regexp {
-  color: #f39;
-}
-
-.keyword {
-  color: #00c;
-}
-
-.comment {
-  color: #555;
-}
-
-.number {
-  color: #369;
-}
-
-.class, .special {
-  color: #1181B8;
-}
-
-.node > rect {
-  stroke-width: 1.5px;
-  fill:rgba(32,32,32,.3);
-}
-
-line {
-  stroke: rgba(32,32,32,.3);
-}
-
-.node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
-}
-
-.node {
-  font: 10px sans-serif;
+.border-selected {
+	stroke: black;
+  stroke-width: 5px;
+	
 }
 
 .link {
-  fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
+	fill: none;
+	stroke: #ccc;
+	stroke-width: 1.5px;
+}
+
+.paper {
+	border: 3px solid lightgray;
+	border-radius: 10px;
+	display: inline-block;
+	position: absolute;
+	top: 100px;
+	left: 50px;
+}
+
+.details-off {
+	display: none;
+}
+
+.details-on {
+	position: absolute;
+	border: 3px solid lightgray;
+	border-radius: 10px;
+	top: 715px;
+	left: 47px;
+	opacity: 0.5;
+	background-color: black;
+	color: yellow;
+	height: 200px;
+	font-family: monospace;
+	font-size: 12px;
+	font-weight: bold;
+	width: 1286px;
+	z-index: 2;
 }

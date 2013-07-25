@@ -27,7 +27,7 @@ joint.shapes.pn.Place = joint.shapes.basic.Generic.extend({
             '.label': {
                 'text-anchor': 'middle',
                 'ref-x': .5,
-                'ref-y': -20,
+                'ref-y': -12,
                 ref: '.root',
                 fill: 'black',
                 'font-size': 12
@@ -146,7 +146,9 @@ joint.shapes.pn.Link = joint.dia.Link.extend({
 
     defaults: joint.util.deepSupplement({
 
-        attrs: { '.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' }}
+        attrs: { 
+        	'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' },
+        },
         
     }, joint.dia.Link.prototype.defaults)
 });

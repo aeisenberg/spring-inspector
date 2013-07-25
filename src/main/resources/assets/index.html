@@ -3,35 +3,15 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Spring Integration Inspector</title>
+<link href="css/joint.css" rel="stylesheet"/>
 <link href="css/sinspctr.css" rel="stylesheet"/>
-<link rel="stylesheet" href="css/jquery.graphviz.css" />
-<script src="js/d3.js"></script>
-<script src="js/jquery-1.7.2.min.js"></script>
-<script src="js/jquery-ui-1.8.21.min.js"></script>
-<script src="js/jquery.graphviz.js"></script>
-<script src="js/sinspctr.js"></script>
-<style>
-
-.node circle {
-  fill: #fff;
-  stroke: steelblue;
-  stroke-width: 1.5px;
-}
-
-.node {
-  font: 10px sans-serif;
-}
-
-.link {
-  fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
-}
-
-</style>
+<script src="js/dagre.js"></script>
+<script src="js/joint.js"></script>
+<script src="js/sinspctr-joint.js"></script>
 </head>
 <body>
 <div id="header">Spring Integration Inspector</div>
-<div id="graph"></div>
+<div id="paper" class="paper"/></div>
+<textarea id="details" class="details-on"></textarea>
 </body>
 </html>
