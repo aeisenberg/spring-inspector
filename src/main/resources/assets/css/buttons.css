@@ -1,0 +1,32 @@
+
+.btn-primary.active {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.btn-primary {
+  color: #ffffff;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+  background-color: #006dcc;
+  *background-color: #0044cc;
+  background-repeat: repeat-x;
+  border-color: #0044cc #0044cc #002a80;
+	border-radius: 5px;
+  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0088cc', endColorstr='#ff0044cc', GradientType=0);
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+}
+
+.btn-primary:active {
+  background-color: #003399;
+}
+
+.btn {
+	font: 16px "Helvetica Neue";
+}
+
+.btn-primary:hover {
+  background-color: #0044cc;
+  cursor: pointer;
+}
+
+

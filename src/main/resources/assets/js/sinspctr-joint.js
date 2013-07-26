@@ -87,20 +87,22 @@ function createGraph(rawElements) {
 	    height: 600,
 	    width: 1280
 	});
-	paper.on('cell:pointerdown', function(evt, x, y) { 
+	paper.on('cell:pointerdown blank:pointerdown', function(evt, x, y) { 
 		// now, show the xml in the textarea
-	    var xmlElt = evt.model.get('xml');
+	    var xmlElt = evt.model && evt.model.get && evt.model.get('xml');
 	    // jquery can't handle add/remove class on svg elements
 	    $('.border-selected').attr('class', 'border');
 	    if (xmlElt) {
 	    	var text = new XMLSerializer().serializeToString(xmlElt);
 	    	evt.$el.find('.border').attr('class', 'border border-selected');
 	    	$('#details').text(text);
+	    	$('#details').addClass('details-on');
+	    	$('#details').removeClass('details-off');
 	    } else {
+	    	$('#details').addClass('details-off');
+	    	$('#details').removeClass('details-on');
 	    	$('#details').text('');
 	    }
-	});
-	paper.on('cell:pointermove', function(evt, x, y) { 
 	});
 
 	var g = dagre.graph();
