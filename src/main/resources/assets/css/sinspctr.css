@@ -3,7 +3,7 @@ body {
 	font: 16px "Helvetica Neue";
 }
 
-#header {
+.header {
 	z-index: 1;
 	font: 300 36px "Helvetica Neue";
 	margin-top: 50px;
@@ -56,4 +56,30 @@ pre {
 	font-size: 12px;
 	font-weight: bold;
 	z-index: 2;
+}
+
+.file-name {
+	font-weight: bold;
+}
+.file-path {
+	color: gray;
+	font-size: smaller;
+}
+
+.config-item {
+	cursor: pointer;
+	list-style-type: none;
+	margin-right: 50px;
+}
+
+.config-item:HOVER {
+	background: lightgray;
+}
+#config-list {
+	position: absolute;
+	top: 300px;
+	left: 400px;
+	background: white;
+	border: 3px solid lightgray;
+	border-radius: 10px;
 }

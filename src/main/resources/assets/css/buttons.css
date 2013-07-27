@@ -1,8 +1,4 @@
 
-.btn-primary.active {
-  color: rgba(255, 255, 255, 0.75);
-}
-
 .btn-primary {
   color: #ffffff;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
@@ -17,7 +13,7 @@
 }
 
 .btn-primary:active {
-  background-color: #003399;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .btn {

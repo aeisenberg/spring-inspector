@@ -70,38 +70,123 @@ joint.shapes.sinspctr.Link = joint.dia.Link.extend({
     }, joint.dia.Link.prototype.defaults)
 });
 
+function closeConfigList() {
+	$('#config-list').addClass('details-off');
+	$('#configs').empty();
+}
+
+var graph, paper;
 $(document).ready(function() {
-	$.ajax("http://localhost:8081/sinspctr/configs/anythin").done(function(xml) {
+	 graph = new joint.dia.Graph();
+	 paper = new joint.dia.Paper({
+	 	el: $('#paper'),
+	 	gridSize: 10,
+	 	model: graph,
+	 	height: 600,
+	 	width: 1280
+	 });
+
+	
+	// clicking anywhere outside of the dialog should close the dialog
+	$(document).click(function() {
+		closeConfigList();
+	});
+	$('#config-list').click(function(evt) {
+		evt.stopPropagation();
+	});
+
+	// open the choose config dialog
+	$('#open-file').click(function(evt) {
+		// so that document doesn't handle the click
+		evt.stopPropagation();
+
+		var configList = $('#config-list');
+		if (!configList.hasClass('details-off')) {
+			// dialog already open. Can ignore
+			return;
+		}
+		
+		configList.removeClass('details-off');
+		// next---bind the escape key to close the widget
+		$(document).keyup(function(e) {
+			if (e.keyCode == 27) {
+				closeConfigList();
+			} 
+		});
+		
+		// get all configs in the project
+		$.ajax("http://localhost:8081/sinspctr/configs/").done(function(json) {
+			if (Array.isArray(json)) {
+				var configsLoc = $('#configs');
+				var str = '<ul>\n';
+				json.forEach(function(config) {
+					var lastSlash = config.lastIndexOf('/');
+					var file = config.substring(lastSlash+1);
+					if (file === 'pom.xml' || file === 'log4j.xml') {
+						// ignore well-known non-configs
+						return;
+					}
+					var path = config.substring(0, lastSlash+1);
+					str+='<li class="config-item" path="' + config + '"><div class="file-name">' + file + '</div><div class="file-path">' + path + '</div></li>';
+				});
+				str += '</ul>\n';
+				configsLoc.append(str);
+				
+				$('.config-item').click(function(evt) {
+					clearGraph();
+					console.log(evt);
+					// "/sinspctr/configs/META-INF/spring/integration/spring-integration-context.xml"
+					var path = evt.currentTarget.getAttribute('path');
+					location.hash = path;
+					loadGraph('/sinspctr/configs' + path);
+					closeConfigList();
+				});
+			}
+		});
+	});
+	
+	if (location.hash) {
+		loadGraph(location.hash);
+	}
+});
+function clearGraph() {
+	if (window.graph) {
+		graph.clear();
+		
+		// should go in separate fn
+		var details = $('#details');
+		details.addClass('details-off');
+    	details.removeClass('details-on');
+    	details.text('');
+
+	}
+}
+
+function loadGraph(url) {
+	$.ajax(url).done(function(xml) {
 		var xmlDoc = $(xml);
 		var beansXML = xmlDoc.find('*');
 		createGraph(beansXML);
 	});
-});
+}
 
 function createGraph(rawElements) {
-	var graph = new joint.dia.Graph();
-	var paper = new joint.dia.Paper({
-	    el: $('#paper'),
-	    gridSize: 10,
-	    model: graph,
-	    height: 600,
-	    width: 1280
-	});
 	paper.on('cell:pointerdown blank:pointerdown', function(evt, x, y) { 
 		// now, show the xml in the textarea
 	    var xmlElt = evt.model && evt.model.get && evt.model.get('xml');
 	    // jquery can't handle add/remove class on svg elements
 	    $('.border-selected').attr('class', 'border');
+	    var details = $('#details');
 	    if (xmlElt) {
 	    	var text = new XMLSerializer().serializeToString(xmlElt);
 	    	evt.$el.find('.border').attr('class', 'border border-selected');
-	    	$('#details').text(text);
-	    	$('#details').addClass('details-on');
-	    	$('#details').removeClass('details-off');
+	    	details.text(text);
+	    	details.addClass('details-on');
+	    	details.removeClass('details-off');
 	    } else {
-	    	$('#details').addClass('details-off');
-	    	$('#details').removeClass('details-on');
-	    	$('#details').text('');
+	    	details.addClass('details-off');
+	    	details.removeClass('details-on');
+	    	details.text('');
 	    }
 	});
 
@@ -145,6 +230,7 @@ function createGraph(rawElements) {
 		});
 	});
 	
+	// determine the location of the nodes
 	dagre.layout()
       .nodes(_.values(nodes))
       .edges(edgesArr)
@@ -268,3 +354,4 @@ function extractImage(elt) {
 	}
 	return 'images/integration/' + imgName;
 }
+

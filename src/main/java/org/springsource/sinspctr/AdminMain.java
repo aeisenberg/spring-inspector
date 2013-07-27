@@ -43,7 +43,7 @@ public class AdminMain {
 	/**
      * Base location for XD config files. Chosen so as not to collide with user provided content.
      */
-    public static final String CONFIG_ROOT = "META-INF/spring/sintrspctr/";
+    public static final String CONFIG_ROOT = "META-INF/spring/sinspctr/";
 
     public static void main(String[] args) {
         try {
@@ -57,13 +57,13 @@ public class AdminMain {
 	 * Launch stream server with the given home and transport
      * @throws IOException 
 	 */
-	static IntrspctrServer launchStreamServer() throws IOException {
+	static InspctrServer launchStreamServer() throws IOException {
 		XmlWebApplicationContext context = new XmlWebApplicationContext();
-		context.setConfigLocation("classpath:" + CONFIG_ROOT + "sintrspctr-server.xml");
+		context.setConfigLocation("classpath:" + CONFIG_ROOT + "sinspctr-server.xml");
 
 		// Not making StreamServer a spring bean eases move to .war file if
 		// needed
-		final IntrspctrServer server = new IntrspctrServer(context, DEFAULT_PORT);
+		final InspctrServer server = new InspctrServer(context, DEFAULT_PORT);
 		server.afterPropertiesSet();
 		server.start();
 		StringBuilder runtimeInfo = new StringBuilder(String.format("Running in Local Mode on port: %s ",

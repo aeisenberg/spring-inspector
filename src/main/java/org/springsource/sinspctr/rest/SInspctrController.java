@@ -19,18 +19,19 @@ package org.springsource.sinspctr.rest;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.net.URISyntaxException;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * 
@@ -41,13 +42,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @RequestMapping("/sinspctr/configs")
 public class SInspctrController {
     
-    @RequestMapping(value = "/{path}", method = RequestMethod.GET)
-    @ResponseStatus(HttpStatus.CREATED)
+    @RequestMapping(value = "/**/*.xml", method = RequestMethod.GET)
+    // these don't work
+//    @RequestMapping(value = "{path:.*}", method = RequestMethod.GET)
+//    @RequestMapping(value = "{path:/**/*.xml}", method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<String> findConfig(@PathVariable("path") String path) {
+    public ResponseEntity<String> findConfig(/*@PathVariable("path") String path*/) {
         ResponseEntity<String> response;
         try {
-            File siConfigFile = getConfigFile(path);
+            File siConfigFile = getConfigFile("META-INF/spring/integration/spring-integration-context.xml");
             HttpHeaders headers = new HttpHeaders();
             headers.add("content-type", "application/xml");
             response = new ResponseEntity<String>(FileCopyUtils.copyToString(new FileReader(siConfigFile)), headers, HttpStatus.OK);
@@ -58,7 +61,42 @@ public class SInspctrController {
     }
 
     private File getConfigFile(String path) throws URISyntaxException {
-        return new File(SInspctrController.class.getClassLoader().getResource("META-INF/spring/integration/spring-integration-context.xml").toURI());
+        return new File(findClassLoader().getResource(path).toURI());
     }
+    
+    @RequestMapping(value = "/", method = RequestMethod.GET, produces="application/json")
+    @ResponseBody
+    public ResponseEntity<String[]> getAllConfigs() {
+        ClassLoader loader = findClassLoader();
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(loader);
+        try {
+            // Is there a way to go from Resource to JSON directly?
+            Resource[] resources = resolver.getResources("**/*.xml");
+            String rootPath = resolver.getResource(".").getFile().getPath();
+            String[] results = new String[resources.length];
+            for (int i = 0; i < resources.length; i++) {
+                String path = resources[i].getFile().getPath();
+                if (path.startsWith(rootPath)) {
+                    path = path.substring(rootPath.length(), path.length());
+                }
+                results[i] = path;
+            }
+            return new ResponseEntity<String[]>(results, HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<String[]>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * @return
+     */
+    private ClassLoader findClassLoader() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            loader = SInspctrController.class.getClassLoader();
+        }
+        return loader;
+    }
+
 
 } 

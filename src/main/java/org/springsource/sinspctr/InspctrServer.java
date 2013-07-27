@@ -39,13 +39,13 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author David Turanski
  * @author Andrew Eisenberg
  */
-public class IntrspctrServer implements SmartLifecycle, InitializingBean {
+public class InspctrServer implements SmartLifecycle, InitializingBean {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	private volatile String contextPath = "";
 
-	private volatile String servletName = "sintrspctr";
+	private volatile String servletName = "sinspctr";
 
 	private final int port;
 
@@ -59,7 +59,7 @@ public class IntrspctrServer implements SmartLifecycle, InitializingBean {
 
 	private final ConfigurableWebApplicationContext webApplicationContext;
 
-	public IntrspctrServer(ConfigurableWebApplicationContext webApplicationContext, int port) {
+	public InspctrServer(ConfigurableWebApplicationContext webApplicationContext, int port) {
 		Assert.notNull(webApplicationContext, "context must not be null");
 		Assert.isTrue(!webApplicationContext.isActive(), "context must not have been started");
 		this.webApplicationContext = webApplicationContext;
@@ -100,15 +100,6 @@ public class IntrspctrServer implements SmartLifecycle, InitializingBean {
 		servlet.setDispatchOptionsRequest(true);
         Tomcat.addServlet(tomcatContext, this.servletName, servlet);
 		tomcatContext.addServletMapping("/", this.servletName);
-
-//		FilterDef filterDef = new FilterDef();
-//		filterDef.setFilterClass(HttpPutFormContentFilter.class.getName());
-//		filterDef.setFilterName("httpPut");
-//		FilterMap filterMap = new FilterMap();
-//		filterMap.setFilterName("httpPut");
-//		filterMap.addServletName(servletName);
-//		tomcatContext.addFilterDef(filterDef);
-//		tomcatContext.addFilterMap(filterMap);
 
 		if (logger.isInfoEnabled()) {
 			logger.info("initialized server: context=" + this.contextPath + ", servlet=" + this.servletName);

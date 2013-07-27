@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springsource.sintrspctr;
+package org.springsource.sinspctr;
 
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
