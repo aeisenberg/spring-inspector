@@ -8,13 +8,19 @@ var X_SCALE = 2,
 	FLIP_AXES = true, 
 	IMAGE_W = 90, 
 	IMAGE_H = 70, 
-	TRANSLATE = 'translate(' + (IMAGE_W/2) + ',' + (IMAGE_H/2) + ')';
+	TRANSLATE = 'translate(' + (IMAGE_W/2) + ',' + (IMAGE_H/2) + ')',
+	EDIT_PREFIX = '/sinspctr/edit';
 
 joint.shapes.sinspctr = {};
 
 joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
 
-    markup: '<g class="rotatable"><g class="scalable"><image class="image" /><rect class="border-white"/><rect class="border"/></g><text class="label"/></g>',
+    markup: '<g class="rotatable"><g class="scalable">' +
+    		'<image class="image" /><rect class="border-white"/>' +
+    		'<rect class="border"/>' +
+    		'<circle class="input" /><circle class="output" />' +
+//    		'<polygon class="input" /><polygon class="output" />' +
+    		'</g><text class="label"/></g>',
 
     defaults: joint.util.deepSupplement({
 
@@ -24,7 +30,6 @@ joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
             '.': { magnet: false },
             // rounded edges around image
             '.border': {
-                magnet: true,
                 width: IMAGE_W,
                 height: IMAGE_H,
                 rx: 10,
@@ -36,13 +41,32 @@ joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
             },
             // use this to cover the image sticking out past the rounded edge
             '.border-white': {
-            	magnet: true,
             	width: IMAGE_W,
             	height: IMAGE_H,
             	fill: 'white',
             	stroke: 'white',
             	'stroke-width': 3,
             	transform: TRANSLATE
+            },
+            '.input': {
+            	magnet: true,
+            	width: 15,
+            	height: 15,
+            	r: 5,
+//            	points: '0, 0 10, 5 0, 10',
+            	stroke: 'lightgray',
+            	fill: 'red',
+            	transform: 'translate(' + (IMAGE_W/2) + ',' + (IMAGE_H) + ')'
+            },
+            '.output': {
+            	magnet: true,
+            	width: 15,
+            	height: 15,
+            	r: 5,
+//            	points: '0, 0 10, 5 0, 10',
+            	stroke: 'lightgray',
+            	fill: 'green',
+            	transform: 'translate(' + (IMAGE_W*3/2) + ',' + (IMAGE_H) + ')'
             },
             '.label': {
                 'text-anchor': 'middle',
@@ -71,8 +95,11 @@ joint.shapes.sinspctr.Link = joint.dia.Link.extend({
 });
 
 function closeConfigList() {
-	$('#config-list').addClass('details-off');
-	$('#configs').empty();
+	var configList = $('#config-list');
+	configList.fadeOut(function() {
+		configList.addClass('details-off');
+		$('#configs').empty();
+	});
 }
 
 var graph, paper;
@@ -106,7 +133,11 @@ $(document).ready(function() {
 			return;
 		}
 		
-		configList.removeClass('details-off');
+		// remove the details-off class after fade-in otherwise 
+		// all hell breaks loose
+		configList.fadeIn(function() {
+			configList.removeClass('details-off');
+		});
 		// next---bind the escape key to close the widget
 		$(document).keyup(function(e) {
 			if (e.keyCode == 27) {
@@ -115,7 +146,7 @@ $(document).ready(function() {
 		});
 		
 		// get all configs in the project
-		$.ajax("http://localhost:8081/sinspctr/configs/").done(function(json) {
+		$.ajax("/sinspctr/configs/").done(function(json) {
 			if (Array.isArray(json)) {
 				var configsLoc = $('#configs');
 				var str = '<ul>\n';
@@ -134,19 +165,21 @@ $(document).ready(function() {
 				
 				$('.config-item').click(function(evt) {
 					clearGraph();
-					console.log(evt);
 					// "/sinspctr/configs/META-INF/spring/integration/spring-integration-context.xml"
 					var path = evt.currentTarget.getAttribute('path');
-					location.hash = path;
-					loadGraph('/sinspctr/configs' + path);
+					location.pathname = EDIT_PREFIX + path;
+					loadGraph(path);
 					closeConfigList();
 				});
 			}
 		});
 	});
 	
-	if (location.hash) {
-		loadGraph(location.hash);
+	// we shouldn't really be using the hash, but ok for now
+	var configPath = location.pathname;
+	if (configPath && configPath.slice(0, EDIT_PREFIX.length) === EDIT_PREFIX && configPath.slice(-4) === '.xml') {
+		configPath = configPath.substring(EDIT_PREFIX.length);
+		loadGraph(configPath);
 	}
 });
 function clearGraph() {
@@ -163,7 +196,7 @@ function clearGraph() {
 }
 
 function loadGraph(url) {
-	$.ajax(url).done(function(xml) {
+	$.ajax('/sinspctr/configs' + url).done(function(xml) {
 		var xmlDoc = $(xml);
 		var beansXML = xmlDoc.find('*');
 		createGraph(beansXML);
@@ -218,13 +251,13 @@ function createGraph(rawElements) {
 		var links = findLinks(node.xml);
 		links.to.forEach(function(toKey) {
 			if (!nodes[toKey]) {
-				console.log('Node named ' + toKey + ' does not exist');
+				console.warn('Node named ' + toKey + ' does not exist');
 			}
 			edgesArr.push(link(node, nodes[toKey]));
 		});
 		links.from.forEach(function(fromKey) {
 			if (!nodes[fromKey]) {
-				console.log('Node named ' + fromKey + ' does not exist');
+				console.warn('Node named ' + fromKey + ' does not exist');
 			}
 			edgesArr.push(link(nodes[fromKey], node));
 		});
@@ -253,10 +286,11 @@ function createGraph(rawElements) {
 			var tx = edge.target.joint.attributes.position.x + IMAGE_W;
 			var ty = edge.target.joint.attributes.position.y + IMAGE_H;
 			
+			// make a nice spline
 			var mids = [];
-			mids.push({x: ((tx-sx)/32*14) + sx, y: ((ty-sy)/8*2) + sy});
+			mids.push({x: ((tx-sx)/32*15) + sx, y: ((ty-sy)/8*2) + sy});
 			mids.push({x: ((tx-sx)/32*16) + sx, y: ((ty-sy)/8*4) + sy});
-			mids.push({x: ((tx-sx)/32*18) + sx, y: ((ty-sy)/8*6) + sy});
+			mids.push({x: ((tx-sx)/32*17) + sx, y: ((ty-sy)/8*6) + sy});
 			edge.link.set('vertices', mids);
 		});
 	};
@@ -279,8 +313,8 @@ function link(nodeFrom, nodeTo) {
 			source: nodeFrom, 
 			target: nodeTo, 
 			link: new joint.shapes.sinspctr.Link({
-				source: { id: nodeFrom.joint.id, selector: '.image' },
-				target: { id: nodeTo.joint.id, selector: '.image' }
+				source: { id: nodeFrom.joint.id, selector: '.output' },
+				target: { id: nodeTo.joint.id, selector: '.input' }
 			})
 	};
 	l.link.set('smooth', true);
@@ -352,6 +386,6 @@ function extractImage(elt) {
 		imgName = 'not-here.jpg';
 		break;
 	}
-	return 'images/integration/' + imgName;
+	return '/sinspctr/assets/images/integration/' + imgName;
 }
 

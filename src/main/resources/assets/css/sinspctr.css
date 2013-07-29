@@ -11,6 +11,10 @@ body {
 	margin-bottom: 10px;
 }
 
+.header-small {
+	font: 300 24px "Helvetica Neue";
+}
+
 rect {
 	fill: none;
 	pointer-events: all;

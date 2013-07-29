@@ -20,9 +20,12 @@ package org.springsource.sinspctr.rest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,43 +36,31 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
- * 
+ * Always retrieves the index.html
  * @author Andrew Eisenberg
- * @created 2013-07-18
+ * @created 2013-07-27
  */
 @Controller
-@RequestMapping("/sinspctr/configs")
-public class SInspctrController {
+@RequestMapping("/sinspctr/edit")
+public class SInspctrRootController {
     
     @ResponseBody
-    @RequestMapping(value = "/**/*.xml", method = RequestMethod.GET)
-    public ResponseEntity<String> findConfig(HttpServletRequest request) {
+    @RequestMapping(value = {"/**/*.xml", "", "/"}, method = RequestMethod.GET)
+    public ResponseEntity<String> getRoot(HttpServletRequest request) {
+        return getIndexHtml();
+    }
+    
+    private ResponseEntity<String> getIndexHtml() {
         ResponseEntity<String> response;
         try {
-            //"META-INF/spring/integration/spring-integration-context.xml"
-            String servletPath = request.getServletPath();
-            if (servletPath.startsWith("/sinspctr/configs")) {
-                servletPath = servletPath.substring("/sinspctr/configs".length(), servletPath.length());
-            }
-            File siConfigFile = ResourceLocator.getClasspathRelativeFile(servletPath);
             HttpHeaders headers = new HttpHeaders();
-            headers.add("content-type", "application/xml");
-            response = new ResponseEntity<String>(FileCopyUtils.copyToString(new FileReader(siConfigFile)), headers, HttpStatus.OK);
+            headers.add("content-type", "text/html");
+            response = new ResponseEntity<String>(FileCopyUtils.copyToString(
+                    new FileReader(ResourceLocator.getClasspathRelativeFile("assets/index.html"))), 
+                    headers, HttpStatus.OK);
             return response;
         } catch (Exception e) {
             return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @RequestMapping(value = "/", method = RequestMethod.GET, produces="application/json")
-    @ResponseBody
-    public ResponseEntity<String[]> getAllConfigs() {
-        try {
-            String[] results = ResourceLocator.findResourcesPaths("**/*.xml");
-            // TODO convert to HATEOAS response
-            return new ResponseEntity<String[]>(results, HttpStatus.OK);
-        } catch (IOException e) {
-            return new ResponseEntity<String[]>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 } 
