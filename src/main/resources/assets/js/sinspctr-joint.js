@@ -11,6 +11,9 @@ var X_SCALE = 2,
 	TRANSLATE = 'translate(' + (IMAGE_W/2) + ',' + (IMAGE_H/2) + ')',
 	EDIT_PREFIX = '/sinspctr/edit';
 
+// TODO BAD!!!!!!  global var
+var edgesArr = [];
+
 joint.shapes.sinspctr = {};
 
 joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
@@ -19,7 +22,6 @@ joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
     		'<image class="image" /><rect class="border-white"/>' +
     		'<rect class="border"/>' +
     		'<circle class="input" /><circle class="output" />' +
-//    		'<polygon class="input" /><polygon class="output" />' +
     		'</g><text class="label"/></g>',
 
     defaults: joint.util.deepSupplement({
@@ -53,7 +55,6 @@ joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
             	width: 15,
             	height: 15,
             	r: 5,
-//            	points: '0, 0 10, 5 0, 10',
             	stroke: 'lightgray',
             	fill: 'red',
             	transform: 'translate(' + (IMAGE_W/2) + ',' + (IMAGE_H) + ')'
@@ -63,9 +64,8 @@ joint.shapes.sinspctr.IntNode = joint.shapes.basic.Generic.extend({
             	width: 15,
             	height: 15,
             	r: 5,
-//            	points: '0, 0 10, 5 0, 10',
             	stroke: 'lightgray',
-            	fill: 'green',
+            	fill: 'black',
             	transform: 'translate(' + (IMAGE_W*3/2) + ',' + (IMAGE_H) + ')'
             },
             '.label': {
@@ -90,13 +90,39 @@ joint.shapes.sinspctr.Link = joint.dia.Link.extend({
     	type: 'sinspctr.Link',
         attrs: { 
         	'.marker-target': { d: 'M 10 0 L 0 5 L 10 10 z' },
-        },
+        	// links should not be manipulable by user
+        	'.marker-vertices': { display : 'none' },
+        	'.marker-arrowheads': { display: 'none' },
+//        	'.link-tools': { display : 'none' },
+//        	'.connection-wrap': { display: 'none' }
+        }
     }, joint.dia.Link.prototype.defaults)
 });
+joint.shapes.sinspctr.LinkView = joint.dia.LinkView.extend({
+	
+	// copied from parent just so that we can change an offset of 40 to 100
+    updateToolsPosition: function() {
+
+        // Move the tools a bit to the target position but don't cover the `sourceArrowhead` marker.
+        // Note that the offset is hardcoded here. The offset should be always
+        // more than the `this.$('.marker-arrowhead[end="source"]')[0].bbox().width` but looking
+        // this up all the time would be slow.
+        var offset = 70; // CHANGE
+        var toolPosition = this.getPointAtLength(offset);
+
+        this._toolCache.attr('transform', 'translate(' + toolPosition.x + ', ' + toolPosition.y + ')');
+    },
+
+	defaults: joint.util.deepSupplement({
+		type: 'sinspctr.LinkView'
+	}, joint.dia.LinkView.prototype.defaults)
+});
+
+
 
 function closeConfigList() {
 	var configList = $('#config-list');
-	configList.fadeOut(function() {
+	configList.fadeOut(100, function() {
 		configList.addClass('details-off');
 		$('#configs').empty();
 	});
@@ -121,7 +147,7 @@ $(document).ready(function() {
 	$('#config-list').click(function(evt) {
 		evt.stopPropagation();
 	});
-
+	
 	// open the choose config dialog
 	$('#open-file').click(function(evt) {
 		// so that document doesn't handle the click
@@ -182,9 +208,31 @@ $(document).ready(function() {
 		loadGraph(configPath);
 	}
 });
+
+function removeLink(link) {
+	for (var i = 0; i < edgesArr.length; i++) {
+		if (edgesArr[i].link === link) {
+			edgesArr.splice(i, 1);
+		}
+	}
+	
+	// now remove the xml node/attribute corresponding to the link
+	var key = link.get('originates');
+	var prop = link.get('originatesProperty');
+	if (typeof prop === 'object') {
+		// link is to a child node, not an attribute
+		// remove the child
+		$(prop).remove();
+	} else {
+		nodes[key].xml.removeAttribute(prop);
+	}
+}
+
 function clearGraph() {
 	if (window.graph) {
+		graph.off('remove', removeLink);
 		graph.clear();
+		graph.on('remove', removeLink);
 		
 		// should go in separate fn
 		var details = $('#details');
@@ -192,6 +240,8 @@ function clearGraph() {
     	details.removeClass('details-on');
     	details.text('');
 
+		// TODO make sure to remove this event handler on clear graph
+    	$('#save-file');
 	}
 }
 
@@ -200,6 +250,23 @@ function loadGraph(url) {
 		var xmlDoc = $(xml);
 		var beansXML = xmlDoc.find('*');
 		createGraph(beansXML);
+		
+		console.log("original");
+		console.log(xml);
+		
+		// TODO make sure to remove this event handler on clear graph
+		$('#save-file').click(function doSave(evt) {
+			var text = new XMLSerializer().serializeToString(xml);
+			// do a post to the server!!!
+			console.log("on save");
+			console.log(text);
+			
+			$.ajax({ url : '/sinspctr/configs' + url, data : { xml : text }, type : "POST"}).done(function(xml) {
+				console.log("Saved!!!");
+				console.log(xml);
+			})
+		}
+);
 	});
 }
 
@@ -222,12 +289,13 @@ function createGraph(rawElements) {
 	    	details.text('');
 	    }
 	});
-
+	
 	var g = dagre.graph();
 
-	var edgesArr = [];
 	var nodes = {};
 	
+	graph.on('remove', removeLink);
+
 	// convert raw elements into a nodes
 	rawElements.each(function(i, elt) {
 		var key = getKey(elt);
@@ -250,16 +318,16 @@ function createGraph(rawElements) {
 		var node = nodes[key];
 		var links = findLinks(node.xml);
 		links.to.forEach(function(toKey) {
-			if (!nodes[toKey]) {
-				console.warn('Node named ' + toKey + ' does not exist');
+			if (!nodes[toKey.key]) {
+				console.warn('Node named ' + toKey.key + ' does not exist');
 			}
-			edgesArr.push(link(node, nodes[toKey]));
+			edgesArr.push(link(node, nodes[toKey.key], key, toKey.prop));
 		});
 		links.from.forEach(function(fromKey) {
-			if (!nodes[fromKey]) {
-				console.warn('Node named ' + fromKey + ' does not exist');
+			if (!nodes[fromKey.key]) {
+				console.warn('Node named ' + fromKey.key + ' does not exist');
 			}
-			edgesArr.push(link(nodes[fromKey], node));
+			edgesArr.push(link(nodes[fromKey.key], node, key, fromKey.prop));
 		});
 	});
 	
@@ -280,19 +348,7 @@ function createGraph(rawElements) {
 	});
 	
 	function reticulateSplines() {
-		edgesArr.forEach(function(edge) {
-			var sx = edge.source.joint.attributes.position.x + IMAGE_W;
-			var sy = edge.source.joint.attributes.position.y + IMAGE_H;
-			var tx = edge.target.joint.attributes.position.x + IMAGE_W;
-			var ty = edge.target.joint.attributes.position.y + IMAGE_H;
-			
-			// make a nice spline
-			var mids = [];
-			mids.push({x: ((tx-sx)/32*15) + sx, y: ((ty-sy)/8*2) + sy});
-			mids.push({x: ((tx-sx)/32*16) + sx, y: ((ty-sy)/8*4) + sy});
-			mids.push({x: ((tx-sx)/32*17) + sx, y: ((ty-sy)/8*6) + sy});
-			edge.link.set('vertices', mids);
-		});
+		edgesArr.forEach(recalculateVertices);
 	};
 	reticulateSplines();
 	
@@ -308,7 +364,7 @@ function getKey(elt) {
 			null;
 }
 
-function link(nodeFrom, nodeTo) {
+function link(nodeFrom, nodeTo, originatesKey, originatesProperty) {
 	var l = {
 			source: nodeFrom, 
 			target: nodeTo, 
@@ -317,7 +373,10 @@ function link(nodeFrom, nodeTo) {
 				target: { id: nodeTo.joint.id, selector: '.input' }
 			})
 	};
-	l.link.set('smooth', true);
+//	l.link.set('smooth', true);
+	l.link.set('originates', originatesKey);
+	l.link.set('originatesProperty', originatesProperty);
+	l.link.on('change:vertices', recalculateVertices);
 	return l;
 }
 
@@ -328,7 +387,7 @@ function findLinks(elt) {
 			for (var i = 0; i < children.length; i++) {
 				var childKey = getKey(children[i]);
 				if (childKey) {
-					links.to.push(childKey);
+					links.to.push({prop: children[i], key: childKey });
 				} else if (children[i].localName === 'interceptors') {
 					traverseChilren(children[i].childNodes);
 				}
@@ -339,23 +398,23 @@ function findLinks(elt) {
 	traverseChilren(elt.childNodes);
 	var channel = elt.getAttribute('channel');
 	if (channel) {
-		links.to.push(channel);
+		links.to.push({prop: 'channel', key: channel });
 	}
 	var inputChannel = elt.getAttribute('input-channel');
 	if (inputChannel) {
-		links.from.push(inputChannel);
+		links.from.push({prop: 'input-channel', key: inputChannel });
 	}
 	var outputChannel = elt.getAttribute('output-channel');
 	if (outputChannel) {
-		links.to.push(outputChannel);
+		links.to.push({prop: 'output-channel', key: outputChannel });
 	}
 	var defaultOutputChannel = elt.getAttribute('default-output-channel');
 	if (defaultOutputChannel) {
-		links.to.push(defaultOutputChannel);
+		links.to.push({prop: 'default-output-channel', key: defaultOutputChannel });
 	}
 	var ref = elt.getAttribute('ref');
 	if (ref) {
-		links.to.push(ref);
+		links.to.push({prop: 'ref', key: ref });
 	}
 	return links;
 }
@@ -387,5 +446,27 @@ function extractImage(elt) {
 		break;
 	}
 	return '/sinspctr/assets/images/integration/' + imgName;
+}
+
+function recalculateVertices(edge) {
+	var source = edge.source.joint;
+	var target = edge.target.joint;
+	
+	var sx = source.attributes.position.x + IMAGE_W;
+	var sy = source.attributes.position.y + IMAGE_H;
+	var tx = target.attributes.position.x + IMAGE_W;
+	var ty = target.attributes.position.y + IMAGE_H;
+
+	// make a nice spline
+	var mids = [];
+	mids.push({x: ((tx-sx)/32*13) + sx, y: ((ty-sy)/8*0) + sy});
+//	mids.push({x: ((tx-sx)/32*15) + sx, y: ((ty-sy)/8*2) + sy});
+//	mids.push({x: ((tx-sx)/32*16) + sx, y: ((ty-sy)/8*4) + sy});
+//	mids.push({x: ((tx-sx)/32*17) + sx, y: ((ty-sy)/8*6) + sy});
+	mids.push({x: ((tx-sx)/32*19) + sx, y: ((ty-sy)/8*8) + sy});
+	
+	edge.link.off('change:vertices');
+	edge.link.set('vertices', mids);
+	edge.link.on('change:vertices', recalculateVertices);
 }
 
