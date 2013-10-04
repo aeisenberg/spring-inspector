@@ -1,23 +1,11 @@
-Spring Integration - Standalone Template (Using the File Adapter)
-================================================================================
+Spring Inspector
+================
 
-This template includes a demonstration of Spring Integration's File support. The
-template includes commonly used components such as:
+This project is a first attempt at providing an HTML5-based visualizer and editor
+for Spring Integration projects.
 
-* Transformers
-* Routers
-* Wire-taps (For logging)
+To start, launch the `org.springsource.sinspctr.AdminMain` class and in a 
+browser, navigate to http://localhost:8081/sinspctr/edit.  From here, you can
+choose a spring-integration context file to view and edit.
 
-You can run the application by either
-
-* running the "Main" class from within STS (Right-click on Main class --> Run As --> Java Application)
-* or from the command line:
-    - mvn package
-    - mvn exec:java
-
---------------------------------------------------------------------------------
-
-For help please take a look at the Spring Integration documentation:
-
-http://www.springsource.org/spring-integration
-
+This project is made available under the Apache 2.0 Open Source License.
